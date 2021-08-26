@@ -63,7 +63,7 @@ public class TradingDAO {
                 myStocks = myStocks.subList(0, Math.min(10, myStocks.size()));
         }else if(withLevel) {
 
-            List<MyStock> myStocksFiltered = myStocks.stream().filter(myStock -> myStock.getLevel() !="None").collect(Collectors.toList());
+            List<MyStock> myStocksFiltered = myStocks.stream().filter(myStock -> !myStock.getLevel().equals("None")).collect(Collectors.toList());
 
             if (from >= 0 && to <= myStocksFiltered.size() && from <= to)
                 myStocks = myStocksFiltered.subList(from, to);
@@ -83,7 +83,8 @@ public class TradingDAO {
 
     public void setStocks(){
 
-        List<MarketInstrument> mktInst = marketInstruments.subList(0,30);
+        List<MarketInstrument> mktInst = marketInstruments.subList(0,100);
+        //List<MarketInstrument> mktInst = marketInstruments;
 
         List<MyStock> myStocks = new LinkedList<>();
 
@@ -204,8 +205,8 @@ public class TradingDAO {
         int sumMin = candles.size()*4/5;
 
 
-        double valid = 0.95;
-        double validNow = 0.95;
+        double valid = 0.92;
+        double validNow = 0.85;
         String result = "None";
 
         if(candles.size() < 3) return result;
