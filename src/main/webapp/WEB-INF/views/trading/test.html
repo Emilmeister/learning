@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Stocks</title>
+    <meta charset="UTF-8">
+<!--    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">-->
+    <!-- Bootstrap CSS -->
+<!--    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">-->
+
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+    <style>
+
+        html, body{
+            width: 95%;
+            height: 90%;
+            padding: 2%;
+            background-color: #adbaff;
+        }
+        [id=centeralTopic] {
+            height: 10%;
+            width: 100%;
+            background-color: cadetblue;
+        }
+        [id=content] {
+            height: 90%;
+            width: 100%;
+            float: left;
+            display: flex;
+        }
+
+        [id=rightTopic] {
+            /*height: 100%;*/
+            /*width: 25%;*/
+            float: left;
+            flex-grow: 1;
+            background-color: #8eabff;
+        }
+        [id=instrumentInfo] {
+            /*height: 95%;*/
+            /*width: 75%;*/
+            float: left;
+            flex-grow: 7;
+            background-color: #5379ff;
+        }
+    </style>
+
+</head>
+<body>
+<div id = "root">
+    <div id = "centeralTopic" style="text-align: center">
+        <h1>Emil's Investing</h1>
+    </div>
+    <div id="content">
+        <div id = "rightTopic">
+            <div id  = "searcherByTickerDiv"></div>
+            <div id = "stocks"></div>
+            <div id = "buttons"></div>
+        </div>
+        <div id = "instrumentInfo">
+            <div id="header" style="text-align: center; width: 100%; height: 10%;"></div>
+            <div id="candlesResolutionDiv" style="text-align: center;width: 100%; height: 10%;"></div>
+            <div id="chart_div" style="width: 100%; height: 80%;"></div>
+        </div>
+    </div>
+
+</div>
+</body>
+
+<script type="text/javascript">
+
+    var stocksOnOnePage = 8;
+    var page = 1;
+    var withLevel = false;
+
+    setSearcherByTicker();
+    google.charts.load('current', {'packages':['corechart']});/////////////////////////////////
+    google.charts.setOnLoadCallback(getStocks);//////////////////////////////////////////////
+    addCandlesResolutionButtons();
+    addBackAndNext();
+
+
+
+    var MyStock;
+    var candleResolution = "hour";
+    var currentGraphicFigi;
+
+    function getStocks(){
+        jQuery.getJSON('http://localhost:8080/trading/stocks.json?'
+            +'from=' +stocksOnOnePage*(page-1)
+            +'&to='+ stocksOnOnePage*page
+            +'&withLevel=' + withLevel, null, printStocks);
+
+
+    }
+
+    function printStocks(data, textStatus, jqXHR) {
+        stocks = data;
+
+        var temp = "";
+
+        for(var i = 0; i < stocks.length; i++){
+            temp += "<h5 id ='"+ stocks[i].marketInstrument.figi +"'>"
+                + "<div style='font-weight: bold'>  " +stocks[i].marketInstrument.ticker+"</div>"
+                +" "+ stocks[i].marketInstrument.name
+                + getLevel(stocks[i].level)+"</h5>";
+        }
+
+        document.getElementById("stocks").innerHTML = temp;
+
+        for(var i = 0; i < stocks.length; i++){
+            document.getElementById(stocks[i].marketInstrument.figi).addEventListener("click", loadCandles, false);
+        }
+    }
+
+    function addBackAndNext(){
+
+        document.getElementById("buttons").innerHTML=
+            "<input type='button' id = 'backButton' value='Назад'>"
+            +"<div id = 'pageNum'>"+page+"</div>"
+            +"<input type='button' id = 'nextButton' value='Вперед'>";
+
+        var back = document.getElementById("backButton");
+        var next = document.getElementById("nextButton");
+        if(page <= 1) back.disabled = true;
+        back.addEventListener('click', backPage, false);
+        next.addEventListener('click', nextPage, false);
+    }
+
+    function nextPage(){
+        page++;
+        document.getElementById("pageNum").innerHTML = page;
+        var back = document.getElementById("backButton");
+        if(page <= 1) back.disabled = true;
+        else back.disabled = false;
+        getStocks();
+    }
+
+    function backPage(){
+        page--;
+        document.getElementById("pageNum").innerHTML = page;
+        var back = document.getElementById("backButton");
+        if(page <= 1) back.disabled = true;
+        else back.disabled = false;
+        getStocks();
+    }
+
+    function getLevel(level){
+        if(level == null){
+            return "";
+        }
+        if(level == "Upper level"){
+            return "<div style='color:red'>: Upper level </div>";
+        }
+        if(level == "Lower level"){
+            return "<div style='color:green'>: Lower level </div>";
+        }
+        if(level =="Coridor"){
+            return "<div style='color:blue'>: Coridor </div>";
+        }
+        return "<div style='color:white'>: None</div>"
+    }
+
+    function setSearcherByTicker(){
+        document.getElementById("searcherByTickerDiv").innerHTML =
+            "<input id = 'searcher' type='search' value='AAPL'>  Type ticker</input>";
+        document.getElementById("searcher").addEventListener("keyup", function (e){
+            if(e.code == "Enter"){
+                jQuery.getJSON('http://localhost:8080/trading/stocks/graphic/ticker/'+this.value
+                    , null, getCandlesByTicker);
+
+
+
+            }
+        });
+    }
+
+    function getCandlesByTicker(data, textStatus, jqXHR){
+        currentGraphicFigi = data.value;
+        loadCandles(currentGraphicFigi);
+    }
+
+
+
+
+
+
+
+
+    function loadCandles(figi) {
+        if(this.id != null){
+            figi = this.id;
+        }else {
+            figi = currentGraphicFigi;
+        }
+        currentGraphicFigi = figi;
+
+        jQuery.getJSON('http://localhost:8080/trading/candles.json?'
+            + 'figi=' + figi
+            + '&candleResolution='+ candleResolution,
+            null, onJsonLoad);
+
+        function onJsonLoad(data, textStatus, jqXHR) {
+
+            MyStock = data;
+            //document.getElementsByTagName("title")[0].text = MyStock.searchMarketInstrument.name;
+            //document.getElementsByTagName("title")[0].text = MyStock.level;
+            document.getElementById("header").innerHTML = "<h1 style='text-align: center'>"
+                + MyStock.searchMarketInstrument.name
+                + "___" + MyStock.level
+                +"</h1>";
+
+            drawChart();
+        }
+    }
+
+    function drawChart() {
+
+        var formatCandles = new Array();
+
+        for(var i = 0; i < MyStock.candles.length; i++){
+            formatCandles[i]  = [
+                getTimeToGrafic(MyStock.candles[i].time),
+                MyStock.candles[i].l,
+                MyStock.candles[i].c,
+                MyStock.candles[i].o,
+                MyStock.candles[i].h
+            ];
+        }
+
+        var data = google.visualization.arrayToDataTable(formatCandles, true);
+
+        var options = {
+            legend:'none',
+            // chartArea: {width: '90%', height: 600},
+            // legend: {position: 'out'},
+            // titlePosition: 'out', axisTitlesPosition: 'out',
+            // hAxis: {textPosition: 'out'}, vAxis: {textPosition: 'out'}
+        };
+
+        var chart = new google.visualization.CandlestickChart(document.getElementById('chart_div'));
+
+        chart.draw(data, options);
+    }
+
+    function addCandlesResolutionButtons(){
+        temp = "<input type='button' id = 'hour' value='hour'>"
+            +"<input type='button' id = 'day' value='day'>"
+            +"<input type='button' id = 'week' value='week'>"
+            +"<input type='button' id = 'month' value='month'>";
+        document.getElementById("candlesResolutionDiv").innerHTML = temp;
+
+        hour = document.getElementById("hour");
+        day = document.getElementById("day");
+        week = document.getElementById("week");
+        month = document.getElementById("month");
+
+        hour.addEventListener("click", getNewGraphic, false);
+        day.addEventListener("click", getNewGraphic, false);
+        week.addEventListener("click", getNewGraphic, false);
+        month.addEventListener("click", getNewGraphic, false);
+
+
+        function getNewGraphic(){
+            if(this.id == 'hour') {
+                candleResolution = "hour";
+                hour.disbled = true;
+                day.disbled = false;
+                week.disbled = false;
+                month.disbled = false;
+
+            }
+            if(this.id == 'day') {
+                candleResolution = "day";
+                hour.disbled = false;
+                day.disbled = true;
+                week.disbled = false;
+                month.disbled = false;
+            }
+            if(this.id == 'week') {
+                candleResolution = "week";
+                hour.disbled = false;
+                day.disbled = false;
+                week.disbled = true;
+                month.disbled = false;
+            }
+            if(this.id == 'month') {
+                candleResolution = "month";
+                hour.disbled = false;
+                day.disbled = false;
+                week.disbled = false;
+                month.disbled = true;
+            }
+            loadCandles(currentGraphicFigi.id);
+        }
+
+
+
+    }
+
+    function getTimeToGrafic(obj){
+        if(candleResolution == "hour"){
+            return obj.hour + 'h  ' + obj.dayOfMonth + ' ' + obj.month;
+        }else if(candleResolution == "day"){
+            return obj.dayOfMonth + ' ' + obj.month;
+        }else if(candleResolution == "week"){
+            return obj.dayOfMonth + ' ' + obj.month + ' ' + obj.year;
+        }else if(candleResolution == "month"){
+            return obj.month + ' ' + obj.year;
+        }
+
+    }
+</script>
+
+
+
+
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>-->
+<!--<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>-->
+
+
+</html>

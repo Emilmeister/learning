@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mybooks</title>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+
+
+
+
+</head>
+<body>
+
+
+</body>
+
+<script>
+
+    jQuery.getJSON('http://localhost:8080/books/getbooks', null, onJsonLoad);
+
+    function onJsonLoad(data, textStatus, jqXHR) {
+        library = data;
+        mainPage();
+    }
+
+
+    function mainPage(){
+
+        document.body.innerHTML = '';
+        //document.write('<meta charset="UTF-8">');
+        document.write('<table border = 1>');
+
+        //????? ???????
+        for (var i = 0; i < library.length; i++) {
+
+
+            document.write('<tr class = \'fields\' id =' + library[i].id + ' >');
+
+            document.write('<td>');
+            document.write(library[i].id);
+            document.write('</td>');
+
+            document.write('<td>');
+            document.write(library[i].authorName);
+            document.write('</td>');
+
+            document.write('<td>');
+            document.write(library[i].bookName);
+            document.write('</td>');
+
+            document.write('<td>');
+            document.write(library[i].type);
+            document.write('</td>');
+
+            document.write('</tr>');
+        }
+
+
+        document.write('</table>');
+        //?????????? ?????????
+        var fields =  document.getElementsByClassName('fields');
+
+        for(var i = 0; i < fields.length; i++){
+            fields[i].addEventListener('click', showPicture, false);
+        }
+
+
+        // ?????????? ??????
+        document.write('<input id = \'addBtn\' type=\'button\' value=\'Добавить\'>');
+        document.write('<input id = \'removeBtn\' type=\'button\' value=\'Удалить\'>');
+        document.write('<input id = \'findByTypeBtn\' type=\'button\' value=\'Найти\'>');
+
+
+        //?????????? ?????????? ? ???????
+        var addBtn =  document.getElementById('addBtn');
+        var removeBtn =  document.getElementById('removeBtn');
+        var findByTypeBtn = document.getElementById('findByTypeBtn');
+
+        addBtn.addEventListener('click', addNewBook, false);
+        removeBtn.addEventListener('click', removeBooks, false);
+        findByTypeBtn.addEventListener('click', typeFilter, false);
+
+
+
+
+
+    }
+
+
+    function showPicture(){
+
+        id = this.id;
+        alert(id);
+
+        document.body.innerHTML = '';
+
+        document.write('<p>');
+        document.write(library[id].id);
+        document.write('</p>');
+
+        document.write('<p>');
+        document.write(library[id].authorName);
+        document.write('</p>');
+
+        document.write('<p>');
+        document.write(library[id].bookName);
+        document.write('</p>');
+
+        document.write('<p>');
+        document.write(library[id].type);
+        document.write('</p>');
+
+        addMainPageBtn();
+    }
+
+
+    function addNewBook() {
+        document.body.innerText = '';
+
+        document.write('<p><input required name = "authorName" id = \'writerTextField\' type=\'text\' value=\'\'>  Фамилия автора</p>');
+        document.write('<p><input required name = "bookName" id  = \'nameTextField\' type=\'text\' value=\'\'>  Название</p>');
+        document.write('<p><input required name = "type" id = \'typeTextField\' type=\'text\' value=\'\'>  Жанр</p>');
+
+
+        document.write('<p><input id = \'addToJsonBtn\' type=\'button\' value=\'Добавить\'></p>');
+
+        var addToJsonBtn = document.getElementById('addToJsonBtn');
+        var writerTextField =  document.getElementById('writerTextField');
+        var nameTextField =  document.getElementById('nameTextField');
+        var typeTextField =  document.getElementById('typeTextField');
+
+
+
+        addToJsonBtn.addEventListener('click', addToJson, false);
+
+
+        function addToJson() {
+
+            if(writerTextField.value != '' && nameTextField.value != '' && typeTextField.value != ''){
+
+                var temp ={
+                    authorName: writerTextField.value,
+                    bookName: nameTextField.value,
+                    type: typeTextField.value
+                }
+
+                var xhr = new XMLHttpRequest();
+                var body = 'authorName=' + encodeURIComponent(writerTextField.value) +
+                    '&bookName=' + encodeURIComponent(nameTextField.value) +
+                    '&type=' + encodeURIComponent(typeTextField.value);
+
+                xhr.open("POST", 'add', false);
+                xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+                xhr.send(body);
+
+                reload();
+
+            }else alert('Не заполнил поля');
+        }
+
+
+
+        addMainPageBtn();
+    }
+
+
+    function removeBooks(){
+
+        document.body.innerHTML = '';
+        document.write('<table border = 1>');
+
+        //????? ???????
+        for (var i = 0; i < library.length; i++) {
+
+            document.write('<tr class = \'fields\' id =' + library[i].id + ' >');
+
+            document.write('<td>');
+            document.write(library[i].id);
+            document.write('</td>');
+
+            document.write('<td>');
+            document.write(library[i].authorName);
+            document.write('</td>');
+
+            document.write('<td>');
+            document.write(library[i].bookName);
+            document.write('</td>');
+
+            document.write('<td>');
+            document.write(library[i].type);
+            document.write('</td>');
+
+            document.write('<td>');
+            document.write('<input id=\'delBtn'+ library[i].id +'\' type = \'checkbox\'>');
+            document.write('</td>');
+
+            document.write('</tr>');
+        }
+
+        document.write('</table>');
+
+
+        document.write('<input id=\'confirmRemoveBtn\' type = \'button\' value =\'Удалить\'>' );
+
+        var confirmRemoveBtn = document.getElementById('confirmRemoveBtn');
+        confirmRemoveBtn.addEventListener('click', removeToJson, false);
+
+        addMainPageBtn();
+
+        function removeToJson() {
+
+            var idsToDelete = "";
+
+            for(var i = 0; i < library.length; i++){
+
+                var temp = document.getElementById('delBtn'+ library[i].id );
+
+                if(temp.checked) {
+                    idsToDelete += library[i].id + ' ';
+                }
+
+
+
+
+
+            }
+
+            if(idsToDelete != ''){
+                var xhr = new XMLHttpRequest();
+                var body = 'idsToDelete=' + encodeURIComponent(idsToDelete);
+                xhr.open("POST", 'delete', false);
+                xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+                xhr.send(body);
+
+            }
+
+            reload();
+
+            mainPage();
+        }
+
+
+
+
+    }
+
+
+    function typeFilter() {
+        document.body.innerHTML = '';
+
+        document.write('<p><input required id = \'choosedTypeText\' type=\'text\' value=\'Жанр\'>  Введите выбранный жанр</p>');
+        document.write('<input required id = \'findBtn\' type=\'button\' value=\'Найти\'>');
+        addMainPageBtn();
+
+        var choosedTypeText = document.getElementById('choosedTypeText');
+        var findBtn = document.getElementById('findBtn');
+
+        findBtn.addEventListener('click', findByType, false);
+
+
+        function findByType() {
+
+            if(choosedTypeText.value != ''){
+
+                jQuery.getJSON('http://localhost:8080/books/getbooksbytype?type='+encodeURIComponent(choosedTypeText.value), null, onGetByType);
+
+                function onGetByType(data, textStatus, jqXHR) {
+
+                    library = data;
+                    document.body.innerHTML = '';
+                    document.write('<table border = 1>');
+
+
+                    for (var i = 0; i < library.length; i++) {
+                        document.write('<tr class = \'fields\' id =' + library[i].id + ' >');
+
+                        document.write('<td>');
+                        document.write(library[i].id);
+                        document.write('</td>');
+
+                        document.write('<td>');
+                        document.write(library[i].authorName);
+                        document.write('</td>');
+
+                        document.write('<td>');
+                        document.write(library[i].bookName);
+                        document.write('</td>');
+
+                        document.write('<td>');
+                        document.write(library[i].type);
+                        document.write('</td>');
+
+                        document.write('</tr>');
+                    }
+                    document.write('</table>');
+
+                    addMainPageBtn();
+
+
+                }
+
+            }
+        }
+    }
+    
+
+
+
+
+
+
+
+    
+    function reload() {
+        window.location.href = '';
+    }
+
+
+    function addMainPageBtn() {
+        document.write('<input id = \'backBtnOnSecondPage\' type=\'button\' value=\'Назад\'>');
+
+        var backBtnOnSecondPage =  document.getElementById('backBtnOnSecondPage');
+        backBtnOnSecondPage.addEventListener('click', reload, false);
+    }
+
+</script>
+
+</html>

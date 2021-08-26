@@ -1,0 +1,153 @@
+<html>
+<head>
+
+    <title>заменяется</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+</head>
+<body>
+    <div id ="root">
+        <div id="header" style="text-align: center"></div>
+        <div id="candlesResolutionDiv" style="text-align: center"></div>
+        <div id="chart_div" style="width: 100%; height: 80%;"></div>
+    </div>>
+</body>
+
+<script type="text/javascript">
+
+    var MyStock;
+    var candleResolution = "hour";
+
+    google.charts.load('current', {'packages':['corechart']});
+    google.charts.setOnLoadCallback(loadCandles());
+
+
+
+    function loadCandles() {
+        document.URL.slice(document.URL.length-(12));
+        jQuery.getJSON('http://localhost:8080/trading/candles.json?'
+            + 'figi=' + document.URL.slice(document.URL.length-(12))
+            + '&candleResolution='+ candleResolution,
+            null, onJsonLoad);
+
+        function onJsonLoad(data, textStatus, jqXHR) {
+
+            MyStock = data;
+            //document.getElementsByTagName("title")[0].text = MyStock.searchMarketInstrument.name;
+            document.getElementsByTagName("title")[0].text = MyStock.level;
+            document.getElementById("header").innerHTML = "<h1 style='text-align: center'>"
+                + MyStock.searchMarketInstrument.name
+                + "___" + MyStock.level
+                +"</h1>";
+
+            drawChart();
+            addCandlesResolutionButtons();
+        }
+    }
+
+    function drawChart() {
+
+        var formatCandles = new Array();
+
+        for(var i = 0; i < MyStock.candles.length; i++){
+            formatCandles[i]  = [
+                getTimeToGrafic(MyStock.candles[i].time),
+                MyStock.candles[i].l,
+                MyStock.candles[i].c,
+                MyStock.candles[i].o,
+                MyStock.candles[i].h
+            ];
+        }
+
+        var data = google.visualization.arrayToDataTable(formatCandles, true);
+
+        var options = {
+            legend:'none'
+        };
+
+        var chart = new google.visualization.CandlestickChart(document.getElementById('chart_div'));
+
+        chart.draw(data, options);
+    }
+
+    function addCandlesResolutionButtons(){
+        temp = "<input type='button' id = 'hour' value='hour'>"
+        +"<input type='button' id = 'day' value='day'>"
+        +"<input type='button' id = 'week' value='week'>"
+        +"<input type='button' id = 'month' value='month'>";
+        document.getElementById("candlesResolutionDiv").innerHTML = temp;
+
+        hour = document.getElementById("hour");
+        day = document.getElementById("day");
+        week = document.getElementById("week");
+        month = document.getElementById("month");
+
+        hour.addEventListener("click", getNewGraphic, false);
+        day.addEventListener("click", getNewGraphic, false);
+        week.addEventListener("click", getNewGraphic, false);
+        month.addEventListener("click", getNewGraphic, false);
+
+
+        function getNewGraphic(){
+            if(this == hour) {
+                candleResolution = "hour";
+                hour.disbled = true;
+                day.disbled = false;
+                week.disbled = false;
+                month.disbled = false;
+
+            }
+            if(this == day) {
+                candleResolution = "day";
+                hour.disbled = false;
+                day.disbled = true;
+                week.disbled = false;
+                month.disbled = false;
+            }
+            if(this == week) {
+                candleResolution = "week";
+                hour.disbled = false;
+                day.disbled = false;
+                week.disbled = true;
+                month.disbled = false;
+            }
+            if(this == month) {
+                candleResolution = "month";
+                hour.disbled = false;
+                day.disbled = false;
+                week.disbled = false;
+                month.disbled = true;
+            }
+            loadCandles();
+        }
+
+
+
+    }
+    function getTimeToGrafic(obj){
+        if(candleResolution == "hour"){
+            return obj.hour + 'h  ' + obj.dayOfMonth + ' ' + obj.month;
+        }else if(candleResolution == "day"){
+            return obj.dayOfMonth + ' ' + obj.month;
+        }else if(candleResolution == "week"){
+            return obj.dayOfMonth + ' ' + obj.month + ' ' + obj.year;
+        }else if(candleResolution == "month"){
+            return obj.month + ' ' + obj.year;
+        }
+
+    }
+</script>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</html>
