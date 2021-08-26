@@ -1,6 +1,6 @@
-package ru.emil.springwebapp.config.dao;
+package ru.emil.springwebapp.first.dao;
 import org.springframework.stereotype.Component;
-import ru.emil.springwebapp.config.models.MyStock;
+import ru.emil.springwebapp.first.models.MyStock;
 import ru.tinkoff.invest.openapi.MarketContext;
 import ru.tinkoff.invest.openapi.OpenApi;
 import ru.tinkoff.invest.openapi.SandboxContext;
@@ -8,7 +8,6 @@ import ru.tinkoff.invest.openapi.model.rest.*;
 import ru.tinkoff.invest.openapi.okhttp.OkHttpOpenApi;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;

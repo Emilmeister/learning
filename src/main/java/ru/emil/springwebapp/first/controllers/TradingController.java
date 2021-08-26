@@ -1,4 +1,4 @@
-package ru.emil.springwebapp.config.controllers;
+package ru.emil.springwebapp.first.controllers;
 
 
 import org.codehaus.jackson.map.ObjectMapper;
@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import ru.emil.springwebapp.config.dao.TradingDAO;
+import ru.emil.springwebapp.first.dao.TradingDAO;
 
 @Controller
 @RequestMapping("/trading")

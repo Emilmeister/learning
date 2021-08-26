@@ -1,4 +1,4 @@
-package ru.emil.springwebapp.config.models;
+package ru.emil.springwebapp.first.models;
 
 
 import java.io.Serializable;

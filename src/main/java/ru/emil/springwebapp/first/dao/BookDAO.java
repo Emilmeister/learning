@@ -1,14 +1,11 @@
-package ru.emil.springwebapp.config.dao;
+package ru.emil.springwebapp.first.dao;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapperResultSetExtractor;
 import org.springframework.stereotype.Component;
-import ru.emil.springwebapp.config.models.Book;
+import ru.emil.springwebapp.first.models.Book;
 
-import java.sql.*;
-import java.util.ArrayList;
 import java.util.List;
 
 @Component

@@ -1,10 +1,9 @@
-package ru.emil.springwebapp.config.models;
+package ru.emil.springwebapp.first.models;
 
 import ru.tinkoff.invest.openapi.model.rest.Candle;
 import ru.tinkoff.invest.openapi.model.rest.MarketInstrument;
 import ru.tinkoff.invest.openapi.model.rest.SearchMarketInstrument;
 
-import java.io.Serializable;
 import java.util.List;
 
 public class MyStock{

@@ -1,4 +1,4 @@
-package ru.emil.springwebapp.config;
+package ru.emil.springwebapp.first.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
