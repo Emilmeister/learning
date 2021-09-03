@@ -47,8 +47,6 @@ public class TradingDAO {
         return myStock;
     }
 
-
-
     public List<MyStock> getStocks(int from, int to, boolean withLevel){
         //System.out.println(myStocks.size() + "----------");
 
@@ -63,7 +61,7 @@ public class TradingDAO {
                 myStocks = myStocks.subList(0, Math.min(10, myStocks.size()));
         }else if(withLevel) {
 
-            List<MyStock> myStocksFiltered = myStocks.stream().filter(myStock -> !myStock.getLevel().equals("None")).collect(Collectors.toList());
+            List<MyStock> myStocksFiltered = myStocks.stream().filter(myStock -> !myStock.getLevel().equals("None") || !myStock.getDeadCross().equals("None")).collect(Collectors.toList());
 
             if (from >= 0 && to <= myStocksFiltered.size() && from <= to)
                 myStocks = myStocksFiltered.subList(from, to);
@@ -80,8 +78,19 @@ public class TradingDAO {
         return myStocks;
     }
 
+    public String getFigiByTicker(String ticker) {
+        try{
+            return marketContext.searchMarketInstrumentsByTicker(ticker)
+                    .get().getInstruments().stream().findAny().get().getFigi();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return null;
+    }
 
-    public void setStocks(){
+
+
+    private void setStocks(){
 
         List<MarketInstrument> mktInst = marketInstruments.subList(0,100);
         //List<MarketInstrument> mktInst = marketInstruments;
@@ -96,7 +105,8 @@ public class TradingDAO {
                     MyStock temp = getCandels(x.getFigi(), "day");
                     if(temp != null) {
                         MyStock stock = new MyStock(null, x, null,
-                                coridor(temp.getCandles()));
+                                coridor(temp.getCandles()),
+                                deadCross(temp.getCandles()));
                         myStocks.add(stock);
                     }
                 }
@@ -110,25 +120,6 @@ public class TradingDAO {
         }
 
         this.myStocks = myStocks;
-    }
-
-
-
-    private OffsetDateTime getOfsetDateTime(int year,
-                                            int month,
-                                            int dayOfMonth,
-                                            int hour,
-                                            int minute){
-        int second = 0;
-        int nanoOfSecond = 0;
-
-        return OffsetDateTime.of(year,
-                month,
-                dayOfMonth,
-                hour,
-                minute,
-                second,
-                nanoOfSecond, ZoneOffset.of("+3"));
     }
 
     public TradingDAO() {
@@ -152,52 +143,31 @@ public class TradingDAO {
 
     }
 
-    Double getMax(Candle c){
-        return Math.max(c.getO().doubleValue(), c.getC().doubleValue());
+    private String deadCross(List<Candle> candles){
+        String result = "None";
+        double close = 0.01;
+
+        if(candles.size() < 200) return result;
+
+        Double ma50 = 0.0;
+        for(Candle c: candles.subList(0,50)){
+            ma50 +=getAverage(c)/50.0;
+        }
+
+        Double ma200 = 0.0;
+        for(Candle c: candles.subList(0,200)){
+            ma200 +=getAverage(c)/200.0;
+        }
+
+        System.out.println("Разница в дэд кросе: " + (ma50-ma200)/ma50);
+
+        if( Math.abs((ma50-ma200)/ma50) < close ){
+            result = "Dead Cross";
+
+        }
+
+        return result;
     }
-
-    Double getMin(Candle c){
-        return Math.min(c.getO().doubleValue(), c.getC().doubleValue());
-    }
-
-    public String getFigiByTicker(String ticker) {
-        try{
-            return marketContext.searchMarketInstrumentsByTicker(ticker)
-                    .get().getInstruments().stream().findAny().get().getFigi();
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-
-    class Pair{
-
-        private int left;
-        private double right;
-
-        public int getLeft() {
-            return left;
-        }
-
-        public void setLeft(int left) {
-            this.left = left;
-        }
-
-        public double getRight() {
-            return right;
-        }
-
-        public void setRight(double right) {
-            this.right = right;
-        }
-
-        public Pair(int left, double right) {
-            this.left = left;
-            this.right = right;
-        }
-    }
-
 
     private String coridor(List<Candle> candles){
 
@@ -240,16 +210,11 @@ public class TradingDAO {
                     *( getMin(after) - getMin(current) ) < 0 &&
                     ( getMin(current) - getMin(before) ) < 0){
 
-//                if(current.getC().doubleValue() < candles.get(indMin).getC().doubleValue()){
-//                    indMin = i;
-//                }
                 extrs.add(new Pair(i , getMin(current)));
 
 
             }
         }
-
-        //for(int i = 0; i < extrs.size(); i++) System.out.println(extrs.get(i).getLeft() +":"+extrs.get(i).getRight());
 
         int closes = Math.max(2*extrs.size()/100,2);/////////////////////////
 
@@ -296,12 +261,9 @@ public class TradingDAO {
             int sumOfCloseMins = 0;
 
 
-            //System.out.println("width " + width);
-
             //близость к макс и мин
             for (Pair pair : extrs) {
                 if ((pair.getRight() - min) / width > valid && (pair.getRight() - min) / width < 1.0) {
-                    //System.out.println("raznitza "+ (pair.getRight() - min));
                     sumOfCloseMaxs++;
                 }
                 if ((max - pair.getRight()) / width > valid && (max - pair.getRight()) / width < 1.0) {
@@ -334,37 +296,83 @@ public class TradingDAO {
 
     }
 
+    private Double getMax(Candle c){
+        return Math.max(c.getO().doubleValue(), c.getC().doubleValue());
+    }
+
+    private Double getMin(Candle c){
+        return Math.min(c.getO().doubleValue(), c.getC().doubleValue());
+    }
+
+    private Double getAverage(Candle c){ return (c.getC().doubleValue()+c.getO().doubleValue())/2.0;}
+
     private OffsetDateTime normalOffsetDateTime(OffsetDateTime before, CandleResolution resolution){
 
-        switch (resolution.getValue()){
-            case "hour":{
-                if( before.isBefore( OffsetDateTime.now().minusWeeks(1) ) ) {
-                    before = OffsetDateTime.now().minusWeeks(1).plusHours(1);
-                }
-                break;
+
+        if (resolution.getValue().equals("hour")){
+            if( before.isBefore( OffsetDateTime.now().minusWeeks(1) ) ) {
+                before = OffsetDateTime.now().minusWeeks(1).plusHours(1);
             }
-            case "day":{
-                if( before.isBefore( OffsetDateTime.now().minusYears(1) ) ) {
-                    before = OffsetDateTime.now().minusDays(180);
-                }
-                break;
+        }
+        if (resolution.getValue().equals("day")){
+            if( before.isBefore( OffsetDateTime.now().minusYears(1) ) ) {
+                before = OffsetDateTime.now().minusDays(300);
             }
-            case "week":{
-                if( before.isBefore( OffsetDateTime.now().minusYears(2) ) ) {
-                    before = OffsetDateTime.now().minusYears(2).plusWeeks(1);
-                }
-                break;
+        }
+        if (resolution.getValue().equals("week")){
+            if( before.isBefore( OffsetDateTime.now().minusYears(2) ) ) {
+                before = OffsetDateTime.now().minusYears(2).plusWeeks(1);
             }
-            case "month":{
-                if( before.isBefore( OffsetDateTime.now().minusYears(10) ) ) {
-                    before = OffsetDateTime.now().minusYears(10).plusMonths(1);
-                }
-                break;
-            }
-            default:{
-                before = OffsetDateTime.now().minusDays(1);
+        }
+        if (resolution.getValue().equals("month")){
+            if( before.isBefore( OffsetDateTime.now().minusYears(10) ) ) {
+                before = OffsetDateTime.now().minusYears(10).plusMonths(1);
             }
         }
         return before;
+    }
+
+    private OffsetDateTime getOfsetDateTime(int year,
+                                            int month,
+                                            int dayOfMonth,
+                                            int hour,
+                                            int minute){
+        int second = 0;
+        int nanoOfSecond = 0;
+
+        return OffsetDateTime.of(year,
+                month,
+                dayOfMonth,
+                hour,
+                minute,
+                second,
+                nanoOfSecond, ZoneOffset.of("+3"));
+    }
+
+    class Pair{
+
+        private int left;
+        private double right;
+
+        public int getLeft() {
+            return left;
+        }
+
+        public void setLeft(int left) {
+            this.left = left;
+        }
+
+        public double getRight() {
+            return right;
+        }
+
+        public void setRight(double right) {
+            this.right = right;
+        }
+
+        public Pair(int left, double right) {
+            this.left = left;
+            this.right = right;
+        }
     }
 }

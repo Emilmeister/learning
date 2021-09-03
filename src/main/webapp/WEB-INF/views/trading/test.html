@@ -43,7 +43,7 @@
             /*width: 75%;*/
             float: left;
             flex-grow: 7;
-            background-color: #5379ff;
+            background-color: #adbaff;
         }
     </style>
 
@@ -72,7 +72,7 @@
 
 <script type="text/javascript">
 
-    var stocksOnOnePage = 8;
+    var stocksOnOnePage = 6;
     var page = 1;
     var withLevel = false;
 
@@ -107,7 +107,8 @@
             temp += "<h5 id ='"+ stocks[i].marketInstrument.figi +"'>"
                 + "<div style='font-weight: bold'>  " +stocks[i].marketInstrument.ticker+"</div>"
                 +" "+ stocks[i].marketInstrument.name
-                + getLevel(stocks[i].level)+"</h5>";
+                + getLevel(stocks[i].level)
+                + " " + getDeadCross(stocks[i].deadCross) + "</h5>";
         }
 
         document.getElementById("stocks").innerHTML = temp;
@@ -147,6 +148,16 @@
         if(page <= 1) back.disabled = true;
         else back.disabled = false;
         getStocks();
+    }
+
+    function getDeadCross(level){
+        if(level == null){
+            return "";
+        }
+        if(level =="Dead Cross"){
+            return "<div style='color:indianred'>: Dead Cross </div>";
+        }
+        return "<div style='color:white'>: None</div>"
     }
 
     function getLevel(level){
@@ -251,10 +262,10 @@
 
         var options = {
             legend:'none',
-            // chartArea: {width: '90%', height: 600},
-            // legend: {position: 'out'},
-            // titlePosition: 'out', axisTitlesPosition: 'out',
-            // hAxis: {textPosition: 'out'}, vAxis: {textPosition: 'out'}
+            candlestick : {
+                fallingColor : {fill:'red', stroke:'black', strokeWidth:1},
+                risingColor : {fill:'green', stroke:'black', strokeWidth:1}
+            }
         };
 
         var chart = new google.visualization.CandlestickChart(document.getElementById('chart_div'));

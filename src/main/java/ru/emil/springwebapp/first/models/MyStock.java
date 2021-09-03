@@ -16,6 +16,16 @@ public class MyStock{
 
     String level;
 
+    String deadCross;
+
+    public String getDeadCross() {
+        return deadCross;
+    }
+
+    public void setDeadCross(String deadCross) {
+        this.deadCross = deadCross;
+    }
+
     public MarketInstrument getMarketInstrument() {
         return MarketInstrument;
     }
@@ -48,7 +58,21 @@ public class MyStock{
         this.level = level;
     }
 
-    public MyStock(SearchMarketInstrument searchMarketInstrument, MarketInstrument marketInstrument, List<Candle> candles, String level) {
+    public MyStock(SearchMarketInstrument searchMarketInstrument,
+                   MarketInstrument marketInstrument,
+                   List<Candle> candles,
+                   String level,
+                   String deadCross) {
+        this.searchMarketInstrument = searchMarketInstrument;
+        MarketInstrument = marketInstrument;
+        this.candles = candles;
+        this.level = level;
+        this.deadCross = deadCross;
+    }
+    public MyStock(SearchMarketInstrument searchMarketInstrument,
+                   MarketInstrument marketInstrument,
+                   List<Candle> candles,
+                   String level) {
         this.searchMarketInstrument = searchMarketInstrument;
         MarketInstrument = marketInstrument;
         this.candles = candles;
