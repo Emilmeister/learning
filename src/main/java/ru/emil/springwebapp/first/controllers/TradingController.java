@@ -53,14 +53,14 @@ public class TradingController {
 
     @GetMapping("/stocks/graphic/figi/{figi}")
     public String showGraphicByFigi(@PathVariable("figi") String figi){
-        return "/trading/showCandles";
+        return "/trading/showCandles.html";
     }
 
 
 
     @GetMapping("/stocks")//////////////////
     public String showStocks(){
-        return "/trading/test";
+        return "trading/main_page.html";
     }
 
 

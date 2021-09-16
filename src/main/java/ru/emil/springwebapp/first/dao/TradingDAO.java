@@ -14,7 +14,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 
-////
 @Component
 public class TradingDAO {
 
@@ -88,11 +87,34 @@ public class TradingDAO {
         return null;
     }
 
+    private void refresh(){
+
+        Thread thread = new Thread(){
+            @Override
+            public void run() {
+
+                try {
+                    int i = 1;
+                    while (true) {
+                        System.out.println(i +" "+i +" "+i++);
+                        sleep(1000*60*60*12);
+                        setStocks();
+                    }
+                }catch (InterruptedException e){
+                    System.out.println("Error to refresh stocks");
+                    e.printStackTrace();
+                }
+            }
+        };
+        thread.start();
+
+    }
+
 
 
     private void setStocks(){
 
-        List<MarketInstrument> mktInst = marketInstruments.subList(0,100);
+        List<MarketInstrument> mktInst = marketInstruments.subList(0,30);
         //List<MarketInstrument> mktInst = marketInstruments;
 
         List<MyStock> myStocks = new LinkedList<>();
@@ -135,6 +157,8 @@ public class TradingDAO {
         try {
             marketInstruments = marketContext.getMarketStocks().get().getInstruments();
             setStocks();
+            refresh();
+
 
 
         }catch (Exception e){
@@ -191,7 +215,7 @@ public class TradingDAO {
         LinkedList<Pair> extrs = new LinkedList<>();
 
 
-        //добавили экстремумы
+        //dobavil extremumi
         for(int i = 1; i < candles.size() - 1; i++){
             Candle before   = candles.get(i-1);
             Candle current  = candles.get(i);
@@ -223,7 +247,7 @@ public class TradingDAO {
             int indMin = 0;
             int indMax = 0;
 
-            //удаление лишних элементов
+            //udalenie lishnih elementov
             for(int i = 0; i < extrs.size(); i++){
                 if(extrs.get(i).getLeft() < k){
                     extrs.remove(i--);
@@ -234,7 +258,7 @@ public class TradingDAO {
                     new Pair(k, ( getMax(candles.get(k))+getMin(candles.get(k)) )/2.0)
             );
 
-            //перезапись максимумов и минимумов
+            //perezapis maksimumov i minimumov
 
             for (int i = 0; i < extrs.size(); i++) {
                 if (getMax(candles.get(extrs.get(i).getLeft())) > getMax(candles.get(extrs.get(indMax).getLeft()))) {
@@ -261,7 +285,7 @@ public class TradingDAO {
             int sumOfCloseMins = 0;
 
 
-            //близость к макс и мин
+            //blizost k max i mins
             for (Pair pair : extrs) {
                 if ((pair.getRight() - min) / width > valid && (pair.getRight() - min) / width < 1.0) {
                     sumOfCloseMaxs++;

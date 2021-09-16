@@ -34,7 +34,7 @@ public class SpringConfig implements WebMvcConfigurer{
         templateResolver.setCharacterEncoding("UTF-8");
         templateResolver.setApplicationContext(applicationContext);
         templateResolver.setPrefix("/WEB-INF/views/");
-        templateResolver.setSuffix(".html");
+        templateResolver.setSuffix("");
         return templateResolver;
     }
 
@@ -60,7 +60,7 @@ public class SpringConfig implements WebMvcConfigurer{
         dataSource.setDriverClassName("org.postgresql.Driver");
         dataSource.setUrl("jdbc:postgresql://localhost:5432/postgres");
         dataSource.setUsername("postgres");
-        dataSource.setPassword("postgre");
+        dataSource.setPassword("postgres");
         return dataSource;
     }
 
