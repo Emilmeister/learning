@@ -114,8 +114,8 @@ public class TradingDAO {
 
     private void setStocks(){
 
-        List<MarketInstrument> mktInst = marketInstruments.subList(0,30);
-        //List<MarketInstrument> mktInst = marketInstruments;
+        //List<MarketInstrument> mktInst = marketInstruments.subList(0,30);
+        List<MarketInstrument> mktInst = marketInstruments;
 
         List<MyStock> myStocks = new LinkedList<>();
 
