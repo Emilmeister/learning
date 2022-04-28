@@ -10,13 +10,45 @@ public class MyStock{
 
     SearchMarketInstrument searchMarketInstrument;
 
-    ru.tinkoff.invest.openapi.model.rest.MarketInstrument MarketInstrument;
+    ru.tinkoff.invest.openapi.model.rest.MarketInstrument marketInstrument;
 
     List<Candle> candles;
 
     String level;
 
     String deadCross;
+
+    double currentPrice;
+
+    double ma50;
+
+    double ma200;
+
+
+    public double getMa50() {
+        return ma50;
+    }
+
+    public void setMa50(double ma50) {
+        this.ma50 = ma50;
+    }
+
+    public double getMa200() {
+        return ma200;
+    }
+
+    public void setMa200(double ma200) {
+        this.ma200 = ma200;
+    }
+
+    public double getCurrentPrice() {
+        return currentPrice;
+    }
+
+    public void setCurrentPrice(double currentPrice) {
+        this.currentPrice = currentPrice;
+    }
+
 
     public String getDeadCross() {
         return deadCross;
@@ -27,11 +59,11 @@ public class MyStock{
     }
 
     public MarketInstrument getMarketInstrument() {
-        return MarketInstrument;
+        return marketInstrument;
     }
 
     public void setMarketInstrument(MarketInstrument marketInstrument) {
-        MarketInstrument = marketInstrument;
+        this.marketInstrument = marketInstrument;
     }
 
     public SearchMarketInstrument getSearchMarketInstrument() {
@@ -64,7 +96,7 @@ public class MyStock{
                    String level,
                    String deadCross) {
         this.searchMarketInstrument = searchMarketInstrument;
-        MarketInstrument = marketInstrument;
+        this.marketInstrument = marketInstrument;
         this.candles = candles;
         this.level = level;
         this.deadCross = deadCross;
@@ -74,7 +106,7 @@ public class MyStock{
                    List<Candle> candles,
                    String level) {
         this.searchMarketInstrument = searchMarketInstrument;
-        MarketInstrument = marketInstrument;
+        this.marketInstrument = marketInstrument;
         this.candles = candles;
         this.level = level;
     }

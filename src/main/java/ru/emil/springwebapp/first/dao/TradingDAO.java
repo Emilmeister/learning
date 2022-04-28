@@ -24,6 +24,9 @@ public class TradingDAO {
     private List<MarketInstrument> marketInstruments;
     private List<MyStock> myStocks;
 
+    public List<MyStock> getMyStocks() {
+        return myStocks;
+    }
 
     public MyStock getCandels(String figi, String candleResolution){
         MyStock myStock = null;
@@ -38,7 +41,7 @@ public class TradingDAO {
             myStock = new MyStock(searchMarketInstrument, null, candles, coridor(candles));
 
         } catch (ExecutionException e) {
-            e.printStackTrace();
+//            e.printStackTrace();
         } catch (InterruptedException e) {
            //e.printStackTrace();
         }
@@ -127,8 +130,9 @@ public class TradingDAO {
                     MyStock temp = getCandels(x.getFigi(), "day");
                     if(temp != null) {
                         MyStock stock = new MyStock(null, x, null,
-                                coridor(temp.getCandles()),
-                                deadCross(temp.getCandles()));
+                                coridor(temp.getCandles()), null);
+                        stock.setDeadCross(deadCross(temp.getCandles(), stock));
+                        stock.setCurrentPrice(temp.getCandles().get(temp.getCandles().size()-1).getC().doubleValue());
                         myStocks.add(stock);
                     }
                 }
@@ -136,7 +140,7 @@ public class TradingDAO {
                 MarketInstrument x = mktInst.get(i);
                 System.out.println("Номер компаннии на каторой упала прога:");
                 System.out.println(mktInst.get(i));
-                e.printStackTrace();
+//                e.printStackTrace();
             }
 
         }
@@ -145,7 +149,7 @@ public class TradingDAO {
     }
 
     public TradingDAO() {
-        String token = "t.sHnKPgnhx9cVAxeBj1HGALH2pGGaIM8AEaMGqnc05EEtDMXwnmCTJVqulVb03UjRU4W8jFL6_YPZn2mvQIdr6w"; // токен авторизации
+        String token = "t.1HsZlKpyUtJvgrQR7HHwsUK5m95ndTPTA830CxKou5GnymMsv_CYEPoUEINeFbi0lMbm3UMBohJWWbXjaiLZ2g"; // токен авторизации
         boolean sandboxMode = true;
         api = new OkHttpOpenApi(token, sandboxMode);
         if (api.isSandboxMode()) {
@@ -167,7 +171,7 @@ public class TradingDAO {
 
     }
 
-    private String deadCross(List<Candle> candles){
+    private String deadCross(List<Candle> candles, MyStock myStock){
         String result = "None";
         double close = 0.01;
 
@@ -183,12 +187,14 @@ public class TradingDAO {
             ma200 +=getAverage(c)/200.0;
         }
 
-        System.out.println("Разница в дэд кросе: " + (ma50-ma200)/ma50);
 
         if( Math.abs((ma50-ma200)/ma50) < close ){
             result = "Dead Cross";
 
         }
+
+        myStock.setMa50(ma50);
+        myStock.setMa200(ma200);
 
         return result;
     }

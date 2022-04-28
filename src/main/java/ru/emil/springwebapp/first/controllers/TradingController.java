@@ -3,10 +3,14 @@ package ru.emil.springwebapp.first.controllers;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ru.emil.springwebapp.first.dao.TradingDAO;
+import ru.emil.springwebapp.first.models.MyStock;
+import ru.emil.springwebapp.first.pojo.Pagination;
+import ru.emil.springwebapp.first.pojo.PaginationEntity;
 
 @Controller
 @RequestMapping("/trading")
@@ -28,16 +32,18 @@ public class TradingController {
         return "lol";
     }
 
-    @GetMapping("/stocks.json")
+    @PostMapping ("/stocks.json")
     @ResponseStatus(value = HttpStatus.OK)
-    public @ResponseBody String getStocks(@RequestParam("from") int from, @RequestParam("to") int to, @RequestParam("withLevel") boolean withLevel){
+    public @ResponseBody PaginationEntity<MyStock> getStocks(@RequestBody Pagination pagination, @RequestParam("withLevel") boolean withLevel){
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            return objectMapper.writeValueAsString(tradingDAO.getStocks(from,to, withLevel));
+            int from = (pagination.getPage() -1 ) * pagination.getLimit();
+            int to = pagination.getPage()* pagination.getLimit();
+            return new PaginationEntity(tradingDAO.getStocks(from,to, withLevel),
+                    tradingDAO.getStocks(0,tradingDAO.getMyStocks().size(), withLevel).size());
         }catch (Exception e){
             e.printStackTrace();
         }
-        return "lol";
+        return null;
     }
 
     @GetMapping("/stocks/graphic/ticker/{ticker}")
