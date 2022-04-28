@@ -1,11 +1,14 @@
 package ru.emil.springwebapp.first.dao;
 import org.springframework.stereotype.Component;
-import ru.emil.springwebapp.first.models.MyStock;
+import ru.emil.springwebapp.first.constants.StockLevel;
+import ru.emil.springwebapp.first.pojo.MyStock;
 import ru.tinkoff.invest.openapi.MarketContext;
 import ru.tinkoff.invest.openapi.OpenApi;
 import ru.tinkoff.invest.openapi.SandboxContext;
 import ru.tinkoff.invest.openapi.model.rest.*;
 import ru.tinkoff.invest.openapi.okhttp.OkHttpOpenApi;
+
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.LinkedList;
@@ -28,29 +31,22 @@ public class TradingDAO {
         return myStocks;
     }
 
-    public MyStock getCandels(String figi, String candleResolution){
-        MyStock myStock = null;
+    public List<Candle> getCandels(String figi, String candleResolution){
+        List<Candle> candles = null;
         try {
             CandleResolution resolution = CandleResolution.fromValue(candleResolution);
-
-            SearchMarketInstrument searchMarketInstrument = marketContext.searchMarketInstrumentByFigi(figi).get().get();
-            List<Candle> candles = marketContext.getMarketCandles( figi,
+            candles = marketContext.getMarketCandles( figi,
                     normalOffsetDateTime(getOfsetDateTime(2010, 1, 1, 1, 1), resolution),
                     OffsetDateTime.now(),
                     resolution).get().get().getCandles();
-            myStock = new MyStock(searchMarketInstrument, null, candles, coridor(candles));
-
-        } catch (ExecutionException e) {
-//            e.printStackTrace();
-        } catch (InterruptedException e) {
-           //e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        return myStock;
+        return candles;
     }
 
     public List<MyStock> getStocks(int from, int to, boolean withLevel){
-        //System.out.println(myStocks.size() + "----------");
 
         List<MyStock> myStocks = this.myStocks;
 
@@ -63,7 +59,7 @@ public class TradingDAO {
                 myStocks = myStocks.subList(0, Math.min(10, myStocks.size()));
         }else if(withLevel) {
 
-            List<MyStock> myStocksFiltered = myStocks.stream().filter(myStock -> !myStock.getLevel().equals("None") || !myStock.getDeadCross().equals("None")).collect(Collectors.toList());
+            List<MyStock> myStocksFiltered = myStocks.stream().filter(myStock -> !myStock.getLevel().equals(StockLevel.NONE) || !(myStock.getDeadCross() == 0.0)).collect(Collectors.toList());
 
             if (from >= 0 && to <= myStocksFiltered.size() && from <= to)
                 myStocks = myStocksFiltered.subList(from, to);
@@ -92,23 +88,20 @@ public class TradingDAO {
 
     private void refresh(){
 
-        Thread thread = new Thread(){
-            @Override
-            public void run() {
+        Thread thread = new Thread(() -> {
 
-                try {
-                    int i = 1;
-                    while (true) {
-                        System.out.println(i +" "+i +" "+i++);
-                        sleep(1000*60*60*12);
-                        setStocks();
-                    }
-                }catch (InterruptedException e){
-                    System.out.println("Error to refresh stocks");
-                    e.printStackTrace();
+            try {
+                int i = 1;
+                while (true) {
+                    System.out.println("Stocks refreshed" + LocalDate.now());
+                    Thread.sleep(1000*60*60*12);
+                    setStocks();
                 }
+            }catch (InterruptedException e){
+                System.out.println("Error to refresh stocks");
+                e.printStackTrace();
             }
-        };
+        });
         thread.start();
 
     }
@@ -117,24 +110,21 @@ public class TradingDAO {
 
     private void setStocks(){
 
-        //List<MarketInstrument> mktInst = marketInstruments.subList(0,30);
-        List<MarketInstrument> mktInst = marketInstruments;
+        List<MarketInstrument> mktInst = marketInstruments.subList(0,30);
+//        List<MarketInstrument> mktInst = marketInstruments;
 
         List<MyStock> myStocks = new LinkedList<>();
 
-        for(int i = 0; i < mktInst.size();i++){////////////////////
+        for(int i = 0; i < mktInst.size();i++){
 
             try {
-                MarketInstrument x = mktInst.get(i);
-                if(x.getType() == InstrumentType.STOCK) {
-                    MyStock temp = getCandels(x.getFigi(), "day");
-                    if(temp != null) {
-                        MyStock stock = new MyStock(null, x, null,
-                                coridor(temp.getCandles()), null);
-                        stock.setDeadCross(deadCross(temp.getCandles(), stock));
-                        stock.setCurrentPrice(temp.getCandles().get(temp.getCandles().size()-1).getC().doubleValue());
-                        myStocks.add(stock);
-                    }
+                MarketInstrument object = mktInst.get(i);
+                List<Candle> candles = getCandels(object.getFigi(), "day");
+                if(candles != null) {
+                    MyStock stock = new MyStock( refactorMarketInstrument(object), null,
+                            coridor(candles), 0.0);
+                    stock.setDeadCross(deadCross(candles, stock));
+                    myStocks.add(stock);
                 }
             }catch (Exception e){
                 MarketInstrument x = mktInst.get(i);
@@ -149,7 +139,7 @@ public class TradingDAO {
     }
 
     public TradingDAO() {
-        String token = "t.1HsZlKpyUtJvgrQR7HHwsUK5m95ndTPTA830CxKou5GnymMsv_CYEPoUEINeFbi0lMbm3UMBohJWWbXjaiLZ2g"; // токен авторизации
+        String token = "";
         boolean sandboxMode = true;
         api = new OkHttpOpenApi(token, sandboxMode);
         if (api.isSandboxMode()) {
@@ -163,17 +153,42 @@ public class TradingDAO {
             setStocks();
             refresh();
 
-
-
         }catch (Exception e){
             //e.printStackTrace();
         }
 
     }
 
-    private String deadCross(List<Candle> candles, MyStock myStock){
-        String result = "None";
-        double close = 0.01;
+    private SearchMarketInstrument refactorMarketInstrument(MarketInstrument marketInstrument){
+        SearchMarketInstrument searchMarketInstrument = new SearchMarketInstrument();
+        searchMarketInstrument.setCurrency(marketInstrument.getCurrency());
+        searchMarketInstrument.setFigi(marketInstrument.getFigi());
+        searchMarketInstrument.setIsin(marketInstrument.getIsin());
+        searchMarketInstrument.setLot(marketInstrument.getLot());
+        searchMarketInstrument.setName(marketInstrument.getName());
+        searchMarketInstrument.setMinPriceIncrement(marketInstrument.getMinPriceIncrement());
+        searchMarketInstrument.setTicker(marketInstrument.getTicker());
+        searchMarketInstrument.setType(marketInstrument.getType());
+
+        return searchMarketInstrument;
+    }
+
+    private MarketInstrument refactorSearchMarketInstrument(SearchMarketInstrument searchMarketInstrument){
+        MarketInstrument marketInstrument = new MarketInstrument();
+        marketInstrument.setCurrency(searchMarketInstrument.getCurrency());
+        marketInstrument.setFigi(searchMarketInstrument.getFigi());
+        marketInstrument.setIsin(searchMarketInstrument.getIsin());
+        marketInstrument.setLot(searchMarketInstrument.getLot());
+        marketInstrument.setName(searchMarketInstrument.getName());
+        marketInstrument.setMinPriceIncrement(searchMarketInstrument.getMinPriceIncrement());
+        marketInstrument.setTicker(searchMarketInstrument.getTicker());
+        marketInstrument.setType(searchMarketInstrument.getType());
+
+        return marketInstrument;
+    }
+
+    private double deadCross(List<Candle> candles, MyStock myStock){
+        double result = 0;
 
         if(candles.size() < 200) return result;
 
@@ -188,18 +203,13 @@ public class TradingDAO {
         }
 
 
-        if( Math.abs((ma50-ma200)/ma50) < close ){
-            result = "Dead Cross";
-
-        }
-
         myStock.setMa50(ma50);
         myStock.setMa200(ma200);
 
-        return result;
+        return (ma50-ma200)/ma50;
     }
 
-    private String coridor(List<Candle> candles){
+    private StockLevel coridor(List<Candle> candles){
 
         int sumMax = candles.size();
         int sumMin = candles.size()*4/5;
@@ -207,7 +217,7 @@ public class TradingDAO {
 
         double valid = 0.92;
         double validNow = 0.85;
-        String result = "None";
+        StockLevel result = StockLevel.NONE;
 
         if(candles.size() < 3) return result;
 
@@ -215,7 +225,6 @@ public class TradingDAO {
 
 
 
-        //candles = candles.subList(Math.max(candles.size()-sumMax, 0), candles.size());
         int between = Math.max(sumMax-sumMin,0);
 
         LinkedList<Pair> extrs = new LinkedList<>();
@@ -275,12 +284,6 @@ public class TradingDAO {
                 }
             }
 
-
-
-
-
-
-
             Candle candleMax   = candles.get(extrs.get(indMax).getLeft());
             Candle candleMin  = candles.get(extrs.get(indMin).getLeft());
             double width = getMax(candleMax) - getMin(candleMin);
@@ -305,16 +308,9 @@ public class TradingDAO {
                     && (now.getC().doubleValue() - min)/width < 1.0;
             boolean nowCloseToMin = (max - now.getC().doubleValue())/width > validNow
                     && (max - now.getC().doubleValue())/width < 1.0;
-
-
-            //System.out.println(sumOfCloseMaxs+":"+sumOfCloseMins);
-            //System.out.println(max+":"+min);
-            //System.out.println(max+":"+min);
-
-            //System.out.println(now.getC().doubleValue());
-            if(sumOfCloseMaxs > closes && sumOfCloseMins > closes && (nowCloseToMax || nowCloseToMin)) {result = "Coridor"; break;}
-            else if(sumOfCloseMaxs > closes && nowCloseToMax) {result = "Upper level"; break;}
-            else if(sumOfCloseMins > closes && nowCloseToMin) {result = "Lower level"; break;}
+            if(sumOfCloseMaxs > closes && sumOfCloseMins > closes && (nowCloseToMax || nowCloseToMin)) {result = StockLevel.CORIDOR; break;}
+            else if(sumOfCloseMaxs > closes && nowCloseToMax) {result = StockLevel.UPPER_LEVEL; break;}
+            else if(sumOfCloseMins > closes && nowCloseToMin) {result = StockLevel.LOWER_LEVEL; break;}
 
         }
 

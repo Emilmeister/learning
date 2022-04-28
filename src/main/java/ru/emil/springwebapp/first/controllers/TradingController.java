@@ -3,12 +3,12 @@ package ru.emil.springwebapp.first.controllers;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ru.emil.springwebapp.first.dao.TradingDAO;
-import ru.emil.springwebapp.first.models.MyStock;
+import ru.emil.springwebapp.first.pojo.MyStock;
 import ru.emil.springwebapp.first.pojo.Pagination;
 import ru.emil.springwebapp.first.pojo.PaginationEntity;
 
@@ -21,7 +21,7 @@ public class TradingController {
 
     @GetMapping("/candles.json")
     @ResponseStatus(value = HttpStatus.OK)
-    public @ResponseBody String getCandles(@RequestParam("figi") String figi,
+    public String getCandles(@RequestParam("figi") String figi,
                                            @RequestParam("candleResolution") String candleResolution){
         try {
             ObjectMapper objectMapper = new ObjectMapper();
@@ -34,40 +34,35 @@ public class TradingController {
 
     @PostMapping ("/stocks.json")
     @ResponseStatus(value = HttpStatus.OK)
-    public @ResponseBody PaginationEntity<MyStock> getStocks(@RequestBody Pagination pagination, @RequestParam("withLevel") boolean withLevel){
+    public ResponseEntity<PaginationEntity<MyStock>> getStocks(@RequestBody Pagination pagination, @RequestParam("withLevel") boolean withLevel){
+        ResponseEntity<PaginationEntity<MyStock>> response;
         try {
             int from = (pagination.getPage() -1 ) * pagination.getLimit();
             int to = pagination.getPage()* pagination.getLimit();
-            return new PaginationEntity(tradingDAO.getStocks(from,to, withLevel),
-                    tradingDAO.getStocks(0,tradingDAO.getMyStocks().size(), withLevel).size());
+            response =  ResponseEntity.ok(
+                    new PaginationEntity(
+                            tradingDAO.getStocks(from,to, withLevel),
+                            tradingDAO.getStocks(0,tradingDAO.getMyStocks().size(),
+                            withLevel).size()));
         }catch (Exception e){
-            e.printStackTrace();
+            response = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        return null;
+        return response;
     }
 
     @GetMapping("/stocks/graphic/ticker/{ticker}")
     @ResponseStatus(value =HttpStatus.OK)
-    public @ResponseBody Object getFigiByTicker(@PathVariable("ticker") String ticker){
+    public ResponseEntity<String> getFigiByTicker(@PathVariable("ticker") String ticker){
+        ResponseEntity<String> response;
         String figi = tradingDAO.getFigiByTicker(ticker);
         if(figi != null)
-            return "{ \"value\": \""+ figi+"\"}";
-        return null;
+            response = ResponseEntity.ok(figi);
+        else {
+            response = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+        return response;
     }
 
-    //Страницы
-
-    @GetMapping("/stocks/graphic/figi/{figi}")
-    public String showGraphicByFigi(@PathVariable("figi") String figi){
-        return "/trading/showCandles.html";
-    }
-
-
-
-    @GetMapping("/stocks")//////////////////
-    public String showStocks(){
-        return "trading/main_page.html";
-    }
 
 
 
