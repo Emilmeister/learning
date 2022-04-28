@@ -1,7 +1,10 @@
 package ru.emil.springwebapp.first.dao;
 import org.springframework.stereotype.Component;
 import ru.emil.springwebapp.first.constants.StockLevel;
+import ru.emil.springwebapp.first.constants.Token;
+import ru.emil.springwebapp.first.pojo.Filter;
 import ru.emil.springwebapp.first.pojo.MyStock;
+import ru.emil.springwebapp.first.pojo.StocksPagination;
 import ru.tinkoff.invest.openapi.MarketContext;
 import ru.tinkoff.invest.openapi.OpenApi;
 import ru.tinkoff.invest.openapi.SandboxContext;
@@ -46,34 +49,15 @@ public class TradingDAO {
         return candles;
     }
 
-    public List<MyStock> getStocks(int from, int to, boolean withLevel){
-
+    public List<MyStock> getStocks(StocksPagination stocksPagination){
         List<MyStock> myStocks = this.myStocks;
-
-        if(!withLevel){
-            if (from >= 0 && to <= myStocks.size() && from <= to)
-                myStocks = myStocks.subList(from, to);
-            else if (from >= 0 && from <= myStocks.size())
-                myStocks = myStocks.subList(from, myStocks.size());
-            else
-                myStocks = myStocks.subList(0, Math.min(10, myStocks.size()));
-        }else if(withLevel) {
-
-            List<MyStock> myStocksFiltered = myStocks.stream().filter(myStock -> !myStock.getLevel().equals(StockLevel.NONE) || !(myStock.getDeadCross() == 0.0)).collect(Collectors.toList());
-
-            if (from >= 0 && to <= myStocksFiltered.size() && from <= to)
-                myStocks = myStocksFiltered.subList(from, to);
-            else if (from >= 0 && from <= myStocksFiltered.size()){
-                myStocks = myStocksFiltered.subList(from, myStocksFiltered.size());
-            }
-            else{
-                myStocks = myStocksFiltered.subList(0, Math.min(10, myStocksFiltered.size()));
-            }
-
-
-        }
-
-        return myStocks;
+        int from = (stocksPagination.getPage() -1 ) * stocksPagination.getLimit();
+        int to = stocksPagination.getPage()* stocksPagination.getLimit();
+        List<MyStock> myStocksFiltered = myStocks.stream()
+                .filter(myStock -> applyFilter(stocksPagination.getFilter(), myStock))
+                .collect(Collectors.toList());
+        myStocksFiltered = myStocksFiltered.subList(Math.min(from,myStocksFiltered.size()), Math.min(to,myStocksFiltered.size()));
+        return myStocksFiltered;
     }
 
     public String getFigiByTicker(String ticker) {
@@ -139,7 +123,7 @@ public class TradingDAO {
     }
 
     public TradingDAO() {
-        String token = "";
+        String token = Token.TOKEN;
         boolean sandboxMode = true;
         api = new OkHttpOpenApi(token, sandboxMode);
         if (api.isSandboxMode()) {
@@ -157,6 +141,23 @@ public class TradingDAO {
             //e.printStackTrace();
         }
 
+    }
+
+    private boolean applyFilter(Filter filter, MyStock myStock){
+        boolean level = true;
+        if (null != filter.getLevels()) level = filter.getLevels().contains(myStock.getLevel());
+        boolean currency = true;
+        if (null != filter.getCurrencies()) currency = filter.getCurrencies().contains(myStock.getSearchMarketInstrument().getCurrency());
+        boolean type = true;
+        if (null != filter.getInstrumentTypes()) type =  filter.getInstrumentTypes().contains(myStock.getSearchMarketInstrument().getType());
+
+        boolean deadCross = true;
+            boolean deadCrossFrom = null != filter.getDeadCrossFrom();
+            boolean deadCrossTo = null != filter.getDeadCrossTo();
+            deadCross = (!deadCrossFrom || filter.getDeadCrossFrom() <= myStock.getDeadCross() )
+                     && (!deadCrossTo || filter.getDeadCrossTo() >= myStock.getDeadCross() );
+
+        return level && deadCross && currency && type;
     }
 
     private SearchMarketInstrument refactorMarketInstrument(MarketInstrument marketInstrument){

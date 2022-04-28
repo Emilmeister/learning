@@ -11,6 +11,10 @@ import ru.emil.springwebapp.first.dao.TradingDAO;
 import ru.emil.springwebapp.first.pojo.MyStock;
 import ru.emil.springwebapp.first.pojo.Pagination;
 import ru.emil.springwebapp.first.pojo.PaginationEntity;
+import ru.emil.springwebapp.first.pojo.StocksPagination;
+import ru.tinkoff.invest.openapi.model.rest.Candle;
+
+import java.util.List;
 
 @Controller
 @RequestMapping("/trading")
@@ -21,31 +25,32 @@ public class TradingController {
 
     @GetMapping("/candles.json")
     @ResponseStatus(value = HttpStatus.OK)
-    public String getCandles(@RequestParam("figi") String figi,
-                                           @RequestParam("candleResolution") String candleResolution){
+    public ResponseEntity<List<Candle>> getCandles(@RequestParam("figi") String figi,
+                                                   @RequestParam("candleResolution") String candleResolution){
+        ResponseEntity<List<Candle>> response;
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            return objectMapper.writeValueAsString(tradingDAO.getCandels(figi, candleResolution));
+            List<Candle> candles = tradingDAO.getCandels(figi, candleResolution);
+            response =  ResponseEntity.ok(candles);
         }catch (Exception e){
-            e.printStackTrace();
+            response = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        return "lol";
+        return response;
     }
 
     @PostMapping ("/stocks.json")
     @ResponseStatus(value = HttpStatus.OK)
-    public ResponseEntity<PaginationEntity<MyStock>> getStocks(@RequestBody Pagination pagination, @RequestParam("withLevel") boolean withLevel){
+    public ResponseEntity<PaginationEntity<MyStock>> getStocks(@RequestBody StocksPagination stocksPagination){
         ResponseEntity<PaginationEntity<MyStock>> response;
         try {
-            int from = (pagination.getPage() -1 ) * pagination.getLimit();
-            int to = pagination.getPage()* pagination.getLimit();
+            List<MyStock> myStockList = tradingDAO.getStocks(stocksPagination);
+            stocksPagination.setPage(1);
+            stocksPagination.setLimit(Integer.MAX_VALUE);
+            int size = tradingDAO.getStocks(stocksPagination).size();
             response =  ResponseEntity.ok(
-                    new PaginationEntity(
-                            tradingDAO.getStocks(from,to, withLevel),
-                            tradingDAO.getStocks(0,tradingDAO.getMyStocks().size(),
-                            withLevel).size()));
+                    new PaginationEntity(myStockList, size));
         }catch (Exception e){
             response = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            e.printStackTrace();
         }
         return response;
     }

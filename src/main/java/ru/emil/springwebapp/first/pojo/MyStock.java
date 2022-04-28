@@ -38,6 +38,9 @@ public class MyStock{
         this.level = level;
     }
 
+    public MyStock() {
+    }
+
 
     public double getMa50() {
         return ma50;
