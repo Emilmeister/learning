@@ -43,7 +43,7 @@ public class TradingDAO {
                     OffsetDateTime.now(),
                     resolution).get().get().getCandles();
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Не смог получить котировки для:" + figi + ' ' + candleResolution);
         }
 
         return candles;
@@ -94,8 +94,8 @@ public class TradingDAO {
 
     private void setStocks(){
 
-        List<MarketInstrument> mktInst = marketInstruments.subList(0,30);
-//        List<MarketInstrument> mktInst = marketInstruments;
+//        List<MarketInstrument> mktInst = marketInstruments.subList(0,30);
+        List<MarketInstrument> mktInst = marketInstruments;
 
         List<MyStock> myStocks = new LinkedList<>();
 
@@ -111,10 +111,7 @@ public class TradingDAO {
                     myStocks.add(stock);
                 }
             }catch (Exception e){
-                MarketInstrument x = mktInst.get(i);
-                System.out.println("Номер компаннии на каторой упала прога:");
-                System.out.println(mktInst.get(i));
-//                e.printStackTrace();
+                System.out.println("Компания на каторой упала прога:\n" + mktInst.get(i));
             }
 
         }
@@ -189,9 +186,8 @@ public class TradingDAO {
     }
 
     private double deadCross(List<Candle> candles, MyStock myStock){
-        double result = 0;
 
-        if(candles.size() < 200) return result;
+        if(candles.size() < 200) return Double.MAX_VALUE;
 
         Double ma50 = 0.0;
         for(Candle c: candles.subList(0,50)){
