@@ -1,4 +1,4 @@
-package ru.emil.springwebapp.first.pojo;
+package ru.emil.springwebapp.first.data.pojo;
 
 import java.util.List;
 

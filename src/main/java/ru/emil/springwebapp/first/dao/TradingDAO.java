@@ -1,10 +1,11 @@
 package ru.emil.springwebapp.first.dao;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import ru.emil.springwebapp.first.constants.StockLevel;
 import ru.emil.springwebapp.first.constants.Token;
-import ru.emil.springwebapp.first.pojo.Filter;
-import ru.emil.springwebapp.first.pojo.MyStock;
-import ru.emil.springwebapp.first.pojo.StocksPagination;
+import ru.emil.springwebapp.first.data.pojo.Filter;
+import ru.emil.springwebapp.first.data.pojo.MyStock;
+import ru.emil.springwebapp.first.data.pojo.StocksPagination;
 import ru.tinkoff.invest.openapi.MarketContext;
 import ru.tinkoff.invest.openapi.OpenApi;
 import ru.tinkoff.invest.openapi.SandboxContext;
@@ -16,7 +17,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 
@@ -70,24 +70,10 @@ public class TradingDAO {
         return null;
     }
 
+    @Scheduled(fixedRate = 1000 * 60 * 60 * 24)
     private void refresh(){
-
-        Thread thread = new Thread(() -> {
-
-            try {
-                int i = 1;
-                while (true) {
-                    System.out.println("Stocks refreshed" + LocalDate.now());
-                    Thread.sleep(1000*60*60*12);
-                    setStocks();
-                }
-            }catch (InterruptedException e){
-                System.out.println("Error to refresh stocks");
-                e.printStackTrace();
-            }
-        });
-        thread.start();
-
+        System.out.println("Stocks refreshed" + LocalDate.now());
+        setStocks();
     }
 
 
@@ -131,11 +117,8 @@ public class TradingDAO {
 
         try {
             marketInstruments = marketContext.getMarketStocks().get().getInstruments();
-            setStocks();
-            refresh();
-
         }catch (Exception e){
-            //e.printStackTrace();
+            e.printStackTrace();
         }
 
     }
@@ -319,15 +302,35 @@ public class TradingDAO {
 
     }
 
-    private Double getMax(Candle c){
+    public List<Candle> getExtremums(List<Candle> candles) {
+        List<Candle> extrs = new LinkedList<>();
+        for(int i = 1; i < candles.size() - 1; i++){
+            Candle before   = candles.get(i-1);
+            Candle current  = candles.get(i);
+            Candle after    = candles.get(i+1);
+
+            if(     ( getMax(current)- getMax(before) )
+                    *( getMax(after) - getMax(current) ) < 0 &&
+                    ( getMax(current)- getMax(before) ) > 0){
+                extrs.add(current);
+            }else if(( getMin(current) - getMin(before) )
+                    *( getMin(after) - getMin(current) ) < 0 &&
+                    ( getMin(current) - getMin(before) ) < 0){
+                extrs.add(current);
+            }
+        }
+        return extrs;
+    }
+
+    public Double getMax(Candle c){
         return Math.max(c.getO().doubleValue(), c.getC().doubleValue());
     }
 
-    private Double getMin(Candle c){
+    public Double getMin(Candle c){
         return Math.min(c.getO().doubleValue(), c.getC().doubleValue());
     }
 
-    private Double getAverage(Candle c){ return (c.getC().doubleValue()+c.getO().doubleValue())/2.0;}
+    public Double getAverage(Candle c){ return (c.getC().doubleValue()+c.getO().doubleValue())/2.0;}
 
     private OffsetDateTime normalOffsetDateTime(OffsetDateTime before, CandleResolution resolution){
 

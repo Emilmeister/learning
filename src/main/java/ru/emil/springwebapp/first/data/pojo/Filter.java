@@ -1,4 +1,4 @@
-package ru.emil.springwebapp.first.pojo;
+package ru.emil.springwebapp.first.data.pojo;
 
 import ru.emil.springwebapp.first.constants.StockLevel;
 import ru.tinkoff.invest.openapi.model.rest.Currency;

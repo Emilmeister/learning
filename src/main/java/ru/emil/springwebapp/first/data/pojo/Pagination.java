@@ -1,4 +1,4 @@
-package ru.emil.springwebapp.first.pojo;
+package ru.emil.springwebapp.first.data.pojo;
 
 public class Pagination {
     private int page;

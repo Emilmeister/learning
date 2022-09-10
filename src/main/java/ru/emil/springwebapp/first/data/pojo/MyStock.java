@@ -1,8 +1,7 @@
-package ru.emil.springwebapp.first.pojo;
+package ru.emil.springwebapp.first.data.pojo;
 
 import ru.emil.springwebapp.first.constants.StockLevel;
 import ru.tinkoff.invest.openapi.model.rest.Candle;
-import ru.tinkoff.invest.openapi.model.rest.MarketInstrument;
 import ru.tinkoff.invest.openapi.model.rest.SearchMarketInstrument;
 
 import java.util.List;

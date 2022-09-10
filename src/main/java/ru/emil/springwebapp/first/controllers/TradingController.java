@@ -1,17 +1,15 @@
 package ru.emil.springwebapp.first.controllers;
 
 
-import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ru.emil.springwebapp.first.dao.TradingDAO;
-import ru.emil.springwebapp.first.pojo.MyStock;
-import ru.emil.springwebapp.first.pojo.Pagination;
-import ru.emil.springwebapp.first.pojo.PaginationEntity;
-import ru.emil.springwebapp.first.pojo.StocksPagination;
+import ru.emil.springwebapp.first.data.pojo.MyStock;
+import ru.emil.springwebapp.first.data.pojo.PaginationEntity;
+import ru.emil.springwebapp.first.data.pojo.StocksPagination;
 import ru.tinkoff.invest.openapi.model.rest.Candle;
 
 import java.util.List;
